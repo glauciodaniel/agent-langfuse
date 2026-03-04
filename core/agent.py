@@ -29,6 +29,7 @@ from common.exceptions import (
     ToolExecutionError,
 )
 from domain.tools import ALL_TOOLS
+from core.observability import get_langfuse_client, langfuse_observe, flush_langfuse, update_trace_context
 
 
 def load_system_prompt() -> str:
@@ -104,9 +105,11 @@ def handle_api_error(error: Exception) -> AgentError:
     return AgentError(str(error), f"Erro inesperado: {str(error)}")
 
 
+@langfuse_observe(name="run_agent")
 def run_agent(
     query: str,
     memory: Optional[ConversationMemory] = None,
+    session_id: Optional[str] = None,
 ) -> AgentResponse:
     """
     Executa o agente com uma pergunta do usuario.
@@ -120,11 +123,16 @@ def run_agent(
     Args:
         query: Pergunta do usuario
         memory: Memoria de conversacao (opcional)
+        session_id: ID da sessao para agrupar traces no Langfuse (opcional)
         
     Returns:
         AgentResponse com resposta e logs de execucao
     """
     settings = get_settings()
+    
+    # Atualizar contexto do trace com session_id
+    if session_id:
+        update_trace_context(session_id=session_id)
     
     # Criar memoria se nao fornecida
     if memory is None:
@@ -156,6 +164,9 @@ def run_agent(
             if not response.tool_calls:
                 logs.append(ExecutionLog(type="answer", content=response.content))
                 memory.add_assistant_message(response.content)
+                
+                # Flush Langfuse antes de retornar
+                flush_langfuse()
                 
                 return AgentResponse(
                     answer=response.content,
@@ -197,6 +208,9 @@ def run_agent(
         error_msg = "Nao consegui processar a solicitacao no tempo limite."
         memory.add_assistant_message(error_msg)
         
+        # Flush Langfuse
+        flush_langfuse()
+        
         return AgentResponse(
             answer=error_msg,
             logs=logs,
@@ -207,6 +221,7 @@ def run_agent(
     except openai.APIError as e:
         agent_error = handle_api_error(e)
         logs.append(ExecutionLog(type="error", content=str(e)))
+        flush_langfuse()
         
         return AgentResponse(
             answer=agent_error.user_message,
@@ -218,6 +233,7 @@ def run_agent(
     except Exception as e:
         agent_error = handle_api_error(e)
         logs.append(ExecutionLog(type="error", content=str(e)))
+        flush_langfuse()
         
         return AgentResponse(
             answer=agent_error.user_message,

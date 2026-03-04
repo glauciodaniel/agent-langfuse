@@ -48,6 +48,12 @@ class Settings:
     max_iterations: int = 5
     memory_max_messages: int = 20
     
+    # Langfuse - Observabilidade
+    langfuse_enabled: bool = False
+    langfuse_host: str = "http://localhost:3000"
+    langfuse_secret_key: str = ""
+    langfuse_public_key: str = ""
+    
     @classmethod
     def from_env(cls) -> "Settings":
         """
@@ -75,6 +81,11 @@ class Settings:
             timeout=float(os.getenv("OPENAI_TIMEOUT", "30")),
             max_iterations=int(os.getenv("AGENT_MAX_ITERATIONS", "5")),
             memory_max_messages=int(os.getenv("AGENT_MEMORY_MAX_MESSAGES", "20")),
+            # Langfuse
+            langfuse_enabled=os.getenv("LANGFUSE_ENABLED", "false").lower() == "true",
+            langfuse_host=os.getenv("LANGFUSE_HOST", "http://localhost:3000"),
+            langfuse_secret_key=os.getenv("LANGFUSE_SECRET_KEY", ""),
+            langfuse_public_key=os.getenv("LANGFUSE_PUBLIC_KEY", ""),
         )
     
     def to_dict(self) -> dict:

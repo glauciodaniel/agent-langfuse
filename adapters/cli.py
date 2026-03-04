@@ -10,6 +10,8 @@ Conceito Didatico - Adapter Pattern:
 """
 
 import os
+import uuid
+from datetime import datetime
 from core.agent import run_agent
 from core.memory import get_global_memory, clear_global_memory
 from core.config import validate_api_key, get_settings
@@ -121,6 +123,11 @@ def run_cli() -> None:
     # Exibir cabecalho
     print_header()
     
+    # Gerar session_id unico para esta sessao do CLI
+    # Formato: cli-YYYYMMDD-HHMMSS-UUID[:8]
+    session_id = f"cli-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:8]}"
+    print(f"{Colors.BLUE}Session ID: {session_id}{Colors.END}\n")
+    
     # Obter memoria global
     memory = get_global_memory()
     
@@ -155,7 +162,7 @@ def run_cli() -> None:
             # Executar agente
             print(f"\n{Colors.BLUE}[PENSANDO]{Colors.END} Processando...")
             
-            response = run_agent(user_input, memory=memory)
+            response = run_agent(user_input, memory=memory, session_id=session_id)
             
             # Exibir logs (exceto answer)
             for log in response.logs:
