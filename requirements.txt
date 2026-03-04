@@ -16,3 +16,7 @@ pydantic>=2.0.0
 # Python-dotenv - Carregamento de variáveis de ambiente do arquivo .env
 # Essencial para gerenciar a OPENAI_API_KEY de forma segura
 python-dotenv>=1.0.0
+
+# Langfuse - Observabilidade e tracking de LLM
+# Permite monitorar chamadas, custos, latência e debugging
+langfuse>=2.0.0
