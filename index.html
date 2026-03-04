@@ -1,0 +1,1772 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aula: Observabilidade de Agentes de IA com Langfuse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+        height: 350px;
+        max-height: 400px;
+      }
+      .hide-scroll::-webkit-scrollbar {
+        display: none;
+      }
+      .hide-scroll {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .glass-panel {
+        background: rgba(10, 22, 40, 0.95);
+        backdrop-filter: blur(10px);
+      }
+      .transition-all {
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 300ms;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              navy: {
+                900: "#0a1628",
+                800: "#0d1f3c",
+                700: "#112240",
+                600: "#1a3158",
+                500: "#1e3a5f",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <!-- Chosen Palette: Fundo Navy escuro, Texto slate-200/white, Destaques em Orange-500 (primário) e Orange-400 (secundário). -->
+    <!-- Application Structure Plan: O SPA utiliza um layout de "Dashboard Educacional" com navegação lateral fixa e uma área de conteúdo dinâmico. Esta arquitetura foi escolhida porque uma ementa de 2 horas contém muita informação técnica; dividir por módulos (tabs) reduz a carga cognitiva. Os elementos interativos (comparadores de observabilidade, hierarquia clicável de traces, blocos de código tabulados e gráficos simulados) transformam um plano de aula estático numa experiência imersiva que reflete a própria ferramenta Langfuse. -->
+    <!-- Visualization & Content Choices: 
+         Módulo 1: Observabilidade Tradicional vs IA -> Toggle Interativo (HTML/JS) -> Permite comparação direta sem ocupar muito espaço vertical.
+         Módulo 2: Hierarquia Langfuse -> Blocos Aninhados Clicáveis (HTML/JS) -> Visualiza a relação Trace > Span > Generation, vital para entender a arquitetura, sem usar SVG.
+         Módulo 3: Hands-on -> Abas de Código (HTML/JS) -> Organiza os passos de instalação e uso de forma limpa.
+         Módulo 4: Dashboard Simulado -> Gráfico de Barras (Chart.js) -> Materializa o resultado final da aula (métricas de tokens/custos) com interação nativa de hover.
+         Geral: Uso exclusivo de Tailwind e Chart.js. Confirmando ausência de Mermaid e SVG. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+  </head>
+  <body
+    class="bg-navy-900 text-slate-200 h-screen overflow-hidden flex flex-col md:flex-row"
+  >
+    <button
+      id="mobile-menu-btn"
+      class="md:hidden fixed top-4 right-4 z-50 p-2 bg-orange-500 text-white rounded-md shadow-lg"
+    >
+      &#9776; Menu
+    </button>
+
+    <aside
+      id="sidebar"
+      class="bg-navy-800 w-full md:w-72 h-full border-r border-navy-600 flex flex-col absolute md:relative z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out shadow-xl md:shadow-none"
+    >
+      <div class="p-6 border-b border-navy-600">
+        <div
+          class="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center text-orange-500 text-2xl mb-4 font-bold"
+        >
+          &#128065;
+        </div>
+        <h1 class="text-xl font-bold text-white leading-tight">
+          Observabilidade de Agentes IA
+        </h1>
+        <p class="text-sm text-slate-400 mt-2">Duração: 2 horas</p>
+      </div>
+
+      <nav class="flex-1 overflow-y-auto hide-scroll py-4" id="nav-menu">
+        <button
+          data-target="visao-geral"
+          class="nav-btn w-full text-left px-6 py-3 text-sm font-medium text-orange-500 bg-orange-500/10 border-r-4 border-orange-500 transition-colors"
+        >
+          &#127919; Visão Geral da Aula
+        </button>
+        <button
+          data-target="mod-1"
+          class="nav-btn w-full text-left px-6 py-3 text-sm font-medium text-slate-400 hover:bg-navy-700 hover:text-white transition-colors"
+        >
+          &#128301; Módulo 1: O Desafio
+        </button>
+        <button
+          data-target="mod-2"
+          class="nav-btn w-full text-left px-6 py-3 text-sm font-medium text-slate-400 hover:bg-navy-700 hover:text-white transition-colors"
+        >
+          &#128200; Módulo 2: O Ecossistema
+        </button>
+        <button
+          data-target="mod-3"
+          class="nav-btn w-full text-left px-6 py-3 text-sm font-medium text-slate-400 hover:bg-navy-700 hover:text-white transition-colors"
+        >
+          &#128187; Módulo 3: Mão na Massa
+        </button>
+        <button
+          data-target="mod-4"
+          class="nav-btn w-full text-left px-6 py-3 text-sm font-medium text-slate-400 hover:bg-navy-700 hover:text-white transition-colors"
+        >
+          &#128202; Módulo 4: Avaliação
+        </button>
+        <button
+          data-target="mod-5"
+          class="nav-btn w-full text-left px-6 py-3 text-sm font-medium text-slate-400 hover:bg-navy-700 hover:text-white transition-colors"
+        >
+          &#9881; Módulo 5: Lab Fase 2
+        </button>
+      </nav>
+
+      <div class="p-4 border-t border-navy-600 bg-navy-900">
+        <p class="text-xs text-slate-500 text-center">
+          Público: Devs, Cientistas de Dados
+        </p>
+      </div>
+    </aside>
+
+    <main
+      class="flex-1 h-full overflow-y-auto bg-navy-900 p-6 md:p-10 relative scroll-smooth"
+      id="main-content"
+    >
+      <section
+        id="visao-geral"
+        class="content-section max-w-4xl mx-auto block animate-[fadeIn_0.5s_ease-out]"
+      >
+        <div
+          class="bg-orange-500 rounded-2xl p-8 md:p-12 text-white shadow-xl mb-8 relative overflow-hidden"
+        >
+          <div class="absolute top-0 right-0 -mt-10 -mr-10 text-9xl opacity-10">
+            &#128065;
+          </div>
+          <h2 class="text-3xl md:text-5xl font-bold mb-4">
+            Agente QA SCR.data — Auditoria Inteligente
+          </h2>
+          <p
+            class="text-lg md:text-xl text-orange-100 max-w-2xl leading-relaxed"
+          >
+            Construa um agente de IA que audita a qualidade metodológica de
+            documentos do
+            <strong>SCR.data</strong> (Sistema de Informações de Créditos do
+            BCB), com observabilidade completa via <strong>Langfuse</strong>. Da
+            Fase 1 (agente único) à Fase 2 (LangGraph com workers paralelos).
+          </p>
+        </div>
+
+        <!-- Contexto SCR.data -->
+        <div class="bg-navy-700 border border-navy-600 rounded-xl p-6 mb-8">
+          <h3 class="font-bold text-orange-400 mb-3 flex items-center">
+            <span class="text-xl mr-2">&#127970;</span> O que é o SCR.data?
+          </h3>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Conjunto de dados abertos do
+            <strong>Banco Central do Brasil</strong> com informações agregadas
+            mensais das operações de crédito (SCR). Inclui métricas como
+            <em>Carteira Ativa</em>, <em>Inadimplência</em> e
+            <em>Ativo Problemático</em>, segmentadas por UF, PF/PJ, modalidade,
+            CNAE, porte e indexador. Cobertura desde junho/2012 com atualização
+            mensal (30 dias de defasagem). Fonte: Desig/BCB.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div
+            class="bg-navy-700 p-6 rounded-xl shadow-sm border border-navy-600"
+          >
+            <div class="text-3xl mb-3">&#128373;</div>
+            <h3 class="font-bold text-orange-400 mb-2">Para quem?</h3>
+            <p class="text-sm text-slate-400">
+              Desenvolvedores, Cientistas de Dados e Engenheiros de IA focados
+              em LLMOps e qualidade de dados.
+            </p>
+          </div>
+          <div
+            class="bg-navy-700 p-6 rounded-xl shadow-sm border border-navy-600"
+          >
+            <div class="text-3xl mb-3">&#9201;</div>
+            <h3 class="font-bold text-orange-400 mb-2">Duração</h3>
+            <p class="text-sm text-slate-400">
+              2 horas de imersão: teoria (Módulos 1–2), live coding (Módulo 3),
+              avaliação (4) e laboratório LangGraph (5).
+            </p>
+          </div>
+          <div
+            class="bg-navy-700 p-6 rounded-xl shadow-sm border border-navy-600"
+          >
+            <div class="text-3xl mb-3">&#127919;</div>
+            <h3 class="font-bold text-orange-400 mb-2">Objetivo Final</h3>
+            <p class="text-sm text-slate-400">
+              Sair com um agente instrumentado auditando 6 dimensões de
+              qualidade, com métricas de custo, latência e score no Langfuse.
+            </p>
+          </div>
+        </div>
+
+        <!-- Stack Técnico -->
+        <div class="bg-navy-800 border border-navy-600 rounded-xl p-6 mb-8">
+          <h3 class="font-bold text-orange-400 mb-4">
+            &#128736; Stack Técnico
+          </h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="bg-navy-700 p-3 rounded-lg text-center">
+              <div class="text-lg font-bold text-white">Python 3.11+</div>
+              <div class="text-xs text-slate-400">Linguagem</div>
+            </div>
+            <div class="bg-navy-700 p-3 rounded-lg text-center">
+              <div class="text-lg font-bold text-white">OpenAI API</div>
+              <div class="text-xs text-slate-400">Provedor LLM</div>
+            </div>
+            <div class="bg-navy-700 p-3 rounded-lg text-center">
+              <div class="text-lg font-bold text-white">Langfuse</div>
+              <div class="text-xs text-slate-400">Observabilidade</div>
+            </div>
+            <div class="bg-navy-700 p-3 rounded-lg text-center">
+              <div class="text-lg font-bold text-white">LangGraph</div>
+              <div class="text-xs text-slate-400">Orquestração Fase 2</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Roadmap Fases -->
+        <div class="bg-navy-700 border border-navy-600 rounded-xl p-6 mb-8">
+          <h3 class="font-bold text-orange-400 mb-4">
+            &#128640; Roadmap do Projeto
+          </h3>
+          <div class="flex flex-col md:flex-row gap-4">
+            <div
+              class="flex-1 bg-navy-800 rounded-lg p-4 border-l-4 border-emerald-500"
+            >
+              <div class="text-emerald-400 font-bold text-sm mb-1">
+                FASE 1 — Agente Único &#10004;
+              </div>
+              <p class="text-xs text-slate-400">
+                Pipeline sequencial: PDF &rarr; Extração &rarr; Avaliação D1–D6
+                &rarr; Scoring &rarr; Síntese &rarr; JSON. ~21 chamadas LLM.
+                Instrumentação Langfuse completa.
+              </p>
+            </div>
+            <div
+              class="flex-1 bg-navy-800 rounded-lg p-4 border-l-4 border-orange-500"
+            >
+              <div class="text-orange-400 font-bold text-sm mb-1">
+                FASE 2 — LangGraph &#127891;
+              </div>
+              <p class="text-xs text-slate-400">
+                1 Orquestrador + 3 Workers paralelos. Cada worker avalia 2
+                dimensões. ~3x mais rápido, mesmo custo. Laboratório para
+                alunos.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pré-requisitos -->
+        <div class="bg-navy-700 border border-navy-600 rounded-xl p-6 mb-8">
+          <h3 class="font-bold text-orange-400 mb-3">
+            &#128218; Pré-requisitos
+          </h3>
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-300"
+          >
+            <div class="flex items-start">
+              <span class="mr-2 text-orange-400">&#10004;</span> Python 3.11+
+              instalado
+            </div>
+            <div class="flex items-start">
+              <span class="mr-2 text-orange-400">&#10004;</span> Chave OpenAI
+              API ativa
+            </div>
+            <div class="flex items-start">
+              <span class="mr-2 text-orange-400">&#10004;</span> Docker + Docker
+              Compose para Langfuse self-hosted
+            </div>
+            <div class="flex items-start">
+              <span class="mr-2 text-orange-400">&#10004;</span> Conhecimento
+              básico de Agentes e LLMs
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mt-12">
+          <button
+            onclick="document.querySelector('[data-target=\'mod-1\']').click()"
+            class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 px-8 rounded-full shadow-lg transition-transform hover:scale-105"
+          >
+            Começar a Exploração &#8594;
+          </button>
+        </div>
+      </section>
+
+      <section
+        id="mod-1"
+        class="content-section max-w-4xl mx-auto hidden animate-[fadeIn_0.5s_ease-out]"
+      >
+        <div class="mb-8">
+          <span
+            class="text-orange-500 font-semibold tracking-wider text-sm uppercase"
+            >Módulo 1 (30 min)</span
+          >
+          <h2 class="text-3xl md:text-4xl font-bold text-white mt-2 mb-4">
+            O Desafio da "Caixa Preta"
+          </h2>
+          <p class="text-slate-400 text-lg">
+            Agentes de IA executam dezenas de chamadas LLM, usam ferramentas
+            externas e tomam decisões autônomas. Sem observabilidade específica,
+            debugar é impossível. Neste módulo entendemos a "dor" e apresentamos
+            as 6 dimensões reais de auditoria do nosso projeto.
+          </p>
+        </div>
+
+        <!-- Anatomia expandida com componentes reais -->
+        <div
+          class="bg-navy-700 rounded-2xl shadow-sm border border-navy-600 p-6 md:p-8 mb-8"
+        >
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <span
+              class="bg-orange-500/20 text-orange-500 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm"
+              >1</span
+            >
+            Anatomia do Agente QA SCR.data
+          </h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
+            <div
+              class="bg-navy-800 p-4 rounded-xl border border-navy-600 hover:border-orange-500/50 transition-colors"
+            >
+              <div class="text-2xl mb-2">&#128196;</div>
+              <h4 class="font-semibold text-orange-400 text-sm">PDF Loader</h4>
+              <p class="text-xs text-slate-400 mt-1">
+                Extração via PyMuPDF com chunking por página e preservação de
+                metadados.
+              </p>
+            </div>
+            <div
+              class="bg-navy-800 p-4 rounded-xl border border-navy-600 hover:border-orange-500/50 transition-colors"
+            >
+              <div class="text-2xl mb-2">&#129504;</div>
+              <h4 class="font-semibold text-orange-400 text-sm">
+                Evaluator (LLM)
+              </h4>
+              <p class="text-xs text-slate-400 mt-1">
+                Avalia critério a critério via OpenAI GPT, gerando findings com
+                evidência.
+              </p>
+            </div>
+            <div
+              class="bg-navy-800 p-4 rounded-xl border border-navy-600 hover:border-orange-500/50 transition-colors"
+            >
+              <div class="text-2xl mb-2">&#128202;</div>
+              <h4 class="font-semibold text-orange-400 text-sm">
+                Scoring Engine
+              </h4>
+              <p class="text-xs text-slate-400 mt-1">
+                Lógica pura: score base 100, penalidades por severidade, média
+                ponderada.
+              </p>
+            </div>
+            <div
+              class="bg-navy-800 p-4 rounded-xl border border-navy-600 hover:border-orange-500/50 transition-colors"
+            >
+              <div class="text-2xl mb-2">&#128065;</div>
+              <h4 class="font-semibold text-orange-400 text-sm">
+                Langfuse Tracer
+              </h4>
+              <p class="text-xs text-slate-400 mt-1">
+                @observe em cada função: trace &rarr; span &rarr; generation com
+                tokens e custo.
+              </p>
+            </div>
+          </div>
+          <div class="mt-6 p-4 bg-navy-800 rounded-lg border border-navy-600">
+            <h4 class="text-sm font-bold text-slate-300 mb-2">
+              &#128260; Pipeline Fase 1 (Sequencial)
+            </h4>
+            <div class="font-mono text-xs text-orange-300 overflow-x-auto">
+              CSV/PDF &rarr; Extração &rarr; D1 &rarr; D2 &rarr; D3 &rarr; D4
+              &rarr; D5 &rarr; D6 &rarr; Scoring &rarr; Síntese &rarr; JSON
+            </div>
+            <p class="text-xs text-slate-500 mt-1">
+              Total: ~21 chamadas LLM (1 por critério × 20 critérios + 1
+              síntese)
+            </p>
+          </div>
+          <div
+            class="mt-4 p-4 bg-orange-500/10 rounded-lg border border-orange-500/30"
+          >
+            <p class="text-sm text-orange-300">
+              <strong>O Problema:</strong> Se o agente entrar em
+              <em>loop</em> ou uma chamada LLM alucinar, sem traces visíveis,
+              debugar é como procurar uma agulha num palheiro. O Langfuse
+              resolve isso.
+            </p>
+          </div>
+        </div>
+
+        <!-- 6 Dimensões de Auditoria -->
+        <div
+          class="bg-navy-700 rounded-2xl shadow-sm border border-navy-600 p-6 md:p-8 mb-8"
+        >
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <span
+              class="bg-orange-500/20 text-orange-500 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm"
+              >2</span
+            >
+            As 6 Dimensões de Qualidade (Checklist QA)
+          </h3>
+          <p class="text-slate-400 text-sm mb-4">
+            Cada dimensão tem peso na média ponderada do score global. Findings
+            usam severidade: <span class="text-red-400">critical</span>,
+            <span class="text-orange-400">major</span>,
+            <span class="text-yellow-400">minor</span>,
+            <span class="text-slate-400">info</span>.
+          </p>
+          <div class="space-y-3">
+            <div
+              class="flex items-center bg-navy-800 rounded-lg p-3 border border-navy-600"
+            >
+              <span class="text-orange-500 font-bold w-10 text-sm">D1</span>
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Cobertura e escopo do conjunto
+                </div>
+                <div class="text-xs text-slate-400">
+                  Universo de dados, abrangência institucional, período
+                  histórico
+                </div>
+              </div>
+              <span class="text-orange-400 font-bold text-sm ml-2">15%</span>
+            </div>
+            <div
+              class="flex items-center bg-navy-800 rounded-lg p-3 border border-navy-600"
+            >
+              <span class="text-orange-500 font-bold w-10 text-sm">D2</span>
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Periodicidade e janela de atualização
+                </div>
+                <div class="text-xs text-slate-400">
+                  Periodicidade mensal, defasagem de 30 dias, data de
+                  atualização
+                </div>
+              </div>
+              <span class="text-orange-400 font-bold text-sm ml-2">15%</span>
+            </div>
+            <div
+              class="flex items-center bg-navy-800 rounded-lg p-3 border border-navy-600"
+            >
+              <span class="text-orange-500 font-bold w-10 text-sm">D3</span>
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Definições de indicadores
+                </div>
+                <div class="text-xs text-slate-400">
+                  Carteira Ativa, Inadimplência, Ativo Problemático — precisão e
+                  clareza
+                </div>
+              </div>
+              <span class="text-orange-400 font-bold text-sm ml-2">20%</span>
+            </div>
+            <div
+              class="flex items-center bg-navy-800 rounded-lg p-3 border border-navy-600"
+            >
+              <span class="text-orange-500 font-bold w-10 text-sm">D4</span>
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Granularidade e segmentações
+                </div>
+                <div class="text-xs text-slate-400">
+                  UF, PF/PJ, modalidade, CNAE, porte, indexador
+                </div>
+              </div>
+              <span class="text-orange-400 font-bold text-sm ml-2">15%</span>
+            </div>
+            <div
+              class="flex items-center bg-navy-800 rounded-lg p-3 border border-navy-600"
+            >
+              <span class="text-orange-500 font-bold w-10 text-sm">D5</span>
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Limitações, divergências e ressalvas
+                </div>
+                <div class="text-xs text-slate-400">
+                  Gaps metodológicos, riscos documentados, caveats explícitos
+                </div>
+              </div>
+              <span class="text-orange-400 font-bold text-sm ml-2">20%</span>
+            </div>
+            <div
+              class="flex items-center bg-navy-800 rounded-lg p-3 border border-navy-600"
+            >
+              <span class="text-orange-500 font-bold w-10 text-sm">D6</span>
+              <div class="flex-1">
+                <div class="text-sm font-medium text-white">
+                  Clareza textual e ausência de ambiguidades
+                </div>
+                <div class="text-xs text-slate-400">
+                  Legibilidade, consistência terminológica, acessibilidade
+                </div>
+              </div>
+              <span class="text-orange-400 font-bold text-sm ml-2">15%</span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="bg-navy-700 rounded-2xl shadow-sm border border-navy-600 p-6 md:p-8"
+        >
+          <h3 class="text-xl font-bold text-white mb-6 flex items-center">
+            <span
+              class="bg-orange-500/20 text-orange-500 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm"
+              >3</span
+            >
+            Porquê Observabilidade Específica para IA?
+          </h3>
+
+          <div class="flex justify-center mb-6">
+            <div class="bg-navy-800 p-1 rounded-lg inline-flex">
+              <button
+                id="btn-trad"
+                class="px-6 py-2 rounded-md text-sm font-medium bg-navy-600 shadow text-white transition-all"
+              >
+                Tradicional (APM)
+              </button>
+              <button
+                id="btn-ia"
+                class="px-6 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white transition-all"
+              >
+                Específica (LLMOps)
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="content-trad"
+            class="text-center p-8 bg-navy-800 rounded-xl border border-navy-600"
+          >
+            <div class="text-4xl mb-4 text-slate-500">&#128187;</div>
+            <h4 class="font-bold text-slate-300 mb-2">
+              Foco em Sistemas Determinísticos
+            </h4>
+            <p class="text-slate-400 max-w-md mx-auto">
+              Ferramentas como Datadog ou Grafana são excelentes para medir uso
+              de CPU, RAM e latência de rede. No entanto, são "cegas" para o
+              conteúdo não-determinístico gerado pelos modelos de linguagem.
+            </p>
+          </div>
+
+          <div
+            id="content-ia"
+            class="hidden text-center p-8 bg-orange-500/10 rounded-xl border border-orange-500/30"
+          >
+            <div class="text-4xl mb-4 text-orange-400">&#129302;</div>
+            <h4 class="font-bold text-orange-300 mb-4">
+              Foco no Comportamento e Custo
+            </h4>
+            <div class="grid grid-cols-2 gap-4 text-left max-w-lg mx-auto">
+              <div class="bg-navy-700 p-3 rounded shadow-sm">
+                <strong class="text-orange-500">Tokens:</strong> Controlo de
+                gastos granulares.
+              </div>
+              <div class="bg-navy-700 p-3 rounded shadow-sm">
+                <strong class="text-orange-500">TTFT:</strong> Time to First
+                Token (latência).
+              </div>
+              <div class="bg-navy-700 p-3 rounded shadow-sm">
+                <strong class="text-orange-500">Qualidade:</strong> Alucinações
+                e toxicidade.
+              </div>
+              <div class="bg-navy-700 p-3 rounded shadow-sm">
+                <strong class="text-orange-500">Raciocínio:</strong> Caminho e
+                uso de ferramentas.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="mod-2"
+        class="content-section max-w-4xl mx-auto hidden animate-[fadeIn_0.5s_ease-out]"
+      >
+        <div class="mb-8">
+          <span
+            class="text-orange-400 font-semibold tracking-wider text-sm uppercase"
+            >Módulo 2 (40 min)</span
+          >
+          <h2 class="text-3xl md:text-4xl font-bold text-white mt-2 mb-4">
+            Mergulho no Ecossistema Langfuse
+          </h2>
+          <p class="text-slate-400 text-lg">
+            Apresentação detalhada da plataforma. Entenda a arquitetura (Cloud
+            vs Self-hosted com Docker Compose), a hierarquia de rastreamento,
+            integrações nativas e o sistema de tags de experimento.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div
+            class="bg-navy-700 p-6 rounded-xl shadow-sm border border-navy-600"
+          >
+            <h3
+              class="font-bold text-orange-400 mb-3 border-b border-navy-600 pb-2"
+            >
+              Hospedagem (Hosting)
+            </h3>
+            <ul class="space-y-3 text-sm text-slate-300">
+              <li class="flex items-start">
+                <span class="mr-2 text-orange-400">&#10004;</span>
+                <div>
+                  <strong>Cloud (SaaS):</strong> Conta gratuita em
+                  <em>cloud.langfuse.com</em>. Ideal para começar.
+                </div>
+              </li>
+              <li class="flex items-start">
+                <span class="mr-2 text-orange-400">&#10004;</span>
+                <div>
+                  <strong>Self-Hosted:</strong> Open Source, ideal para
+                  compliance (LGPD/RGPD). Usamos
+                  <code class="text-orange-300">docker compose up -d</code>
+                  nesta aula.
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div
+            class="bg-navy-700 p-6 rounded-xl shadow-sm border border-navy-600"
+          >
+            <h3
+              class="font-bold text-orange-400 mb-3 border-b border-navy-600 pb-2"
+            >
+              Recursos do Dashboard
+            </h3>
+            <ul class="space-y-3 text-sm text-slate-300">
+              <li class="flex items-start">
+                <span class="mr-2 text-orange-500">&#9656;</span>
+                <div>
+                  <strong>Tracing:</strong> Visão waterfall com latency, tokens
+                  e custo por span.
+                </div>
+              </li>
+              <li class="flex items-start">
+                <span class="mr-2 text-orange-500">&#9656;</span>
+                <div>
+                  <strong>Prompt Management:</strong> Versionamento de prompts
+                  sem deploy de código.
+                </div>
+              </li>
+              <li class="flex items-start">
+                <span class="mr-2 text-orange-500">&#9656;</span>
+                <div>
+                  <strong>Datasets & Scores:</strong> Testes de regressão,
+                  avaliação humana e LLM-as-a-judge.
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div
+            class="bg-navy-700 p-6 rounded-xl shadow-sm border border-navy-600"
+          >
+            <h3
+              class="font-bold text-orange-400 mb-3 border-b border-navy-600 pb-2"
+            >
+              Integrações Nativas
+            </h3>
+            <ul class="space-y-3 text-sm text-slate-300">
+              <li class="flex items-start">
+                <span class="mr-2 text-orange-500">&#9656;</span>
+                <div>
+                  <strong>LangChain:</strong> CallbackHandler automático para
+                  chains, tools e LLMs.
+                </div>
+              </li>
+              <li class="flex items-start">
+                <span class="mr-2 text-orange-500">&#9656;</span>
+                <div>
+                  <strong>OpenAI SDK:</strong> Wrapper
+                  <code class="text-orange-300"
+                    >@observe(as_type="generation")</code
+                  >.
+                </div>
+              </li>
+              <li class="flex items-start">
+                <span class="mr-2 text-orange-500">&#9656;</span>
+                <div>
+                  <strong>LangGraph:</strong> Rastreamento de nós e edges do
+                  grafo de execução.
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Tags de Experimento -->
+        <div class="bg-navy-700 rounded-xl border border-navy-600 p-6 mb-8">
+          <h3 class="font-bold text-orange-400 mb-3">
+            &#127991; Tags de Experimento no Projeto
+          </h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="bg-navy-800 p-3 rounded-lg text-center">
+              <code class="text-orange-300 text-sm">fase-1</code>
+              <div class="text-xs text-slate-400 mt-1">Pipeline sequencial</div>
+            </div>
+            <div class="bg-navy-800 p-3 rounded-lg text-center">
+              <code class="text-orange-300 text-sm">fase-2</code>
+              <div class="text-xs text-slate-400 mt-1">LangGraph paralelo</div>
+            </div>
+            <div class="bg-navy-800 p-3 rounded-lg text-center">
+              <code class="text-orange-300 text-sm">scr-data</code>
+              <div class="text-xs text-slate-400 mt-1">Tema do documento</div>
+            </div>
+            <div class="bg-navy-800 p-3 rounded-lg text-center">
+              <code class="text-orange-300 text-sm">benchmark</code>
+              <div class="text-xs text-slate-400 mt-1">Execução formal</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-navy-800 rounded-2xl shadow-lg p-6 md:p-8 text-white">
+          <h3 class="text-xl font-bold mb-2">
+            A Hierarquia de Rastreamento (Projeto Real)
+          </h3>
+          <p class="text-slate-400 text-sm mb-4">
+            Assim fica a árvore de traces do nosso agente QA no Langfuse:
+          </p>
+          <div
+            class="bg-navy-900 rounded-lg p-4 font-mono text-xs text-slate-300 mb-6 overflow-x-auto border border-navy-600"
+          >
+            <div class="text-orange-400">Trace: audit-fase1</div>
+            <div class="ml-4 text-slate-400">
+              ├── Span: pdf_extraction
+              <span class="text-slate-500">(metadata: {pages, chunks})</span>
+            </div>
+            <div class="ml-4 text-slate-400">├── Span: eval_D1</div>
+            <div class="ml-8 text-emerald-400">
+              └── Generation: eval-D1.1, D1.2, D1.3
+            </div>
+            <div class="ml-4 text-slate-400">├── Span: eval_D2 ... eval_D6</div>
+            <div class="ml-8 text-emerald-400">
+              └── Generation: eval-DX.Y (cada critério)
+            </div>
+            <div class="ml-4 text-slate-400">└── Span: synthesis</div>
+            <div class="ml-8 text-emerald-400">
+              └── Generation: synthesis (sumário + recomendações)
+            </div>
+          </div>
+          <p class="text-slate-400 text-sm mb-8">
+            Interaja com os blocos abaixo para explorar cada conceito:
+          </p>
+
+          <div class="flex flex-col md:flex-row gap-8">
+            <div class="flex-1 space-y-4 font-mono text-sm">
+              <div
+                class="hierarchy-item cursor-pointer bg-navy-700 border-l-4 border-orange-500 p-4 rounded hover:bg-navy-600 transition"
+                data-desc="trace"
+              >
+                <div class="text-orange-400 font-bold mb-1">TRACE</div>
+                <div class="text-slate-400">Sessão inteira do utilizador</div>
+
+                <div class="mt-3 ml-4 space-y-3">
+                  <div
+                    class="hierarchy-item cursor-pointer bg-navy-800 border-l-4 border-orange-300 p-3 rounded hover:bg-navy-700 transition"
+                    data-desc="span"
+                  >
+                    <div class="text-orange-300 font-bold mb-1">SPAN</div>
+                    <div class="text-slate-400">Tarefa: Busca contexto</div>
+                  </div>
+                  <div
+                    class="hierarchy-item cursor-pointer bg-navy-800 border-l-4 border-emerald-500 p-3 rounded hover:bg-navy-700 transition"
+                    data-desc="generation"
+                  >
+                    <div class="text-emerald-400 font-bold mb-1">
+                      GENERATION
+                    </div>
+                    <div class="text-slate-400">Chamada ao LLM (GPT-4)</div>
+                  </div>
+                  <div
+                    class="hierarchy-item cursor-pointer bg-navy-800 border-l-4 border-amber-500 p-3 rounded hover:bg-navy-700 transition"
+                    data-desc="event"
+                  >
+                    <div class="text-amber-400 font-bold mb-1">EVENT</div>
+                    <div class="text-slate-400">Submissão do UI</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex-1">
+              <div
+                class="bg-navy-700 rounded-xl p-6 h-full flex flex-col justify-center border border-navy-600"
+                id="hierarchy-desc"
+              >
+                <div class="text-4xl mb-4 text-slate-500">&#8678;</div>
+                <h4 class="text-lg font-bold text-slate-200 mb-2">
+                  Selecione um elemento
+                </h4>
+                <p class="text-slate-400">
+                  Clique nos blocos à esquerda para explorar os conceitos de
+                  Tracing do Langfuse.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="mod-3"
+        class="content-section max-w-4xl mx-auto hidden animate-[fadeIn_0.5s_ease-out]"
+      >
+        <div class="mb-8">
+          <span
+            class="text-orange-400 font-semibold tracking-wider text-sm uppercase"
+            >Módulo 3 (35 min)</span
+          >
+          <h2 class="text-3xl md:text-4xl font-bold text-white mt-2 mb-4">
+            Mão na Massa (Live Coding)
+          </h2>
+          <p class="text-slate-400 text-lg">
+            O momento de abrir o editor. Vamos configurar o Docker Compose para
+            Langfuse self-hosted, instalar dependências, configurar variáveis de
+            ambiente e injetar observabilidade no agente QA com o decorator
+            <code class="text-orange-300">@observe</code>.
+          </p>
+        </div>
+
+        <!-- Docker Compose Setup -->
+        <div class="bg-navy-700 border border-navy-600 rounded-xl p-6 mb-8">
+          <h3 class="font-bold text-orange-400 mb-3">
+            &#128051; 0. Langfuse Self-Hosted (Docker Compose)
+          </h3>
+          <p class="text-xs text-slate-400 mb-3">
+            Já temos o
+            <code class="text-orange-300">docker-compose.yaml</code> no projeto.
+            Basta subir:
+          </p>
+          <div
+            class="bg-navy-800 rounded-lg p-4 font-mono text-sm text-slate-300 overflow-x-auto"
+          >
+            <span class="text-slate-500"
+              ># Subir Langfuse + PostgreSQL localmente</span
+            ><br />
+            <span class="text-orange-300">docker compose up -d</span
+            ><br /><br />
+            <span class="text-slate-500"># Acessar o dashboard</span><br />
+            <span class="text-slate-400">http://localhost:3000</span>
+          </div>
+        </div>
+
+        <div class="bg-navy-800 rounded-xl shadow-lg overflow-hidden mb-8">
+          <div class="flex border-b border-navy-600 bg-navy-700">
+            <button
+              class="code-tab-btn active px-6 py-3 text-sm font-medium text-orange-400 border-b-2 border-orange-400"
+              data-target="code-setup"
+            >
+              1. Setup & Env
+            </button>
+            <button
+              class="code-tab-btn px-6 py-3 text-sm font-medium text-slate-400 hover:text-slate-200 transition"
+              data-target="code-decorator"
+            >
+              2. @observe
+            </button>
+            <button
+              class="code-tab-btn px-6 py-3 text-sm font-medium text-slate-400 hover:text-slate-200 transition"
+              data-target="code-langchain"
+            >
+              3. Callback Agent
+            </button>
+            <button
+              class="code-tab-btn px-6 py-3 text-sm font-medium text-slate-400 hover:text-slate-200 transition"
+              data-target="code-cli"
+            >
+              4. CLI Execução
+            </button>
+          </div>
+
+          <div class="p-6 font-mono text-sm text-slate-300 overflow-x-auto">
+            <div id="code-setup" class="code-content block">
+              <span class="text-slate-500"># Instalação no terminal</span><br />
+              <span class="text-orange-300">pip install</span> -r
+              requirements.txt<br /><br />
+              <span class="text-slate-500"># Principais dependências:</span
+              ><br />
+              <span class="text-slate-400"
+                ># langfuse, openai, langchain, langgraph, pyyaml,
+                pydantic</span
+              ><br /><br />
+              <span class="text-slate-500"
+                ># Ficheiro .env (copie de .env.example)</span
+              ><br />
+              LANGFUSE_PUBLIC_KEY=<span class="text-amber-300">"pk-lf-..."</span
+              ><br />
+              LANGFUSE_SECRET_KEY=<span class="text-amber-300">"sk-lf-..."</span
+              ><br />
+              LANGFUSE_HOST=<span class="text-amber-300"
+                >"http://localhost:3000"</span
+              ><br />
+              OPENAI_API_KEY=<span class="text-amber-300">"sk-..."</span>
+            </div>
+
+            <div id="code-decorator" class="code-content hidden">
+              <span class="text-slate-500"
+                ># src/observability/langfuse_tracing.py</span
+              ><br />
+              <span class="text-orange-400">from</span> langfuse.decorators
+              <span class="text-orange-400">import</span> observe,
+              langfuse_context<br /><br />
+              <span class="text-orange-400">def</span>
+              <span class="text-orange-300">configure_langfuse</span>():<br />
+              &nbsp;&nbsp;langfuse_context.configure(<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;public_key=os.getenv(<span
+                class="text-amber-300"
+                >"LANGFUSE_PUBLIC_KEY"</span
+              >),<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;secret_key=os.getenv(<span
+                class="text-amber-300"
+                >"LANGFUSE_SECRET_KEY"</span
+              >),<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;host=os.getenv(<span
+                class="text-amber-300"
+                >"LANGFUSE_HOST"</span
+              >),<br />
+              &nbsp;&nbsp;)<br /><br />
+              <span class="text-slate-500"
+                ># Decore funções para criar spans automáticos</span
+              ><br />
+              <span class="text-orange-300">@observe</span>()<br />
+              <span class="text-orange-400">def</span>
+              <span class="text-orange-300">evaluate_dimension</span>(dim,
+              chunks):<br />
+              &nbsp;&nbsp;...<br /><br />
+              <span class="text-slate-500"
+                ># Para chamadas LLM: registra tokens + custo</span
+              ><br />
+              <span class="text-orange-300">@observe</span>(as_type=<span
+                class="text-amber-300"
+                >"generation"</span
+              >)<br />
+              <span class="text-orange-400">def</span>
+              <span class="text-orange-300">call_llm</span>(prompt):<br />
+              &nbsp;&nbsp;...
+            </div>
+
+            <div id="code-langchain" class="code-content hidden">
+              <span class="text-slate-500"
+                ># Integração via CallbackHandler (LangChain)</span
+              ><br />
+              <span class="text-orange-400">from</span> langfuse.callback
+              <span class="text-orange-400">import</span>
+              CallbackHandler<br /><br />
+              langfuse_handler = CallbackHandler(<br />
+              &nbsp;&nbsp;session_id=<span class="text-amber-300"
+                >"audit_sessao_01"</span
+              >,<br />
+              &nbsp;&nbsp;user_id=<span class="text-amber-300"
+                >"aluno_fiap"</span
+              >,<br />
+              &nbsp;&nbsp;tags=[<span class="text-amber-300">"fase-1"</span>,
+              <span class="text-amber-300">"scr-data"</span>]<br />
+              )<br /><br />
+              <span class="text-slate-500"
+                ># Toda a cadeia é mapeada automaticamente</span
+              ><br />
+              resultado = agente.invoke(<br />
+              &nbsp;&nbsp;{<span class="text-amber-300">"input"</span>:
+              <span class="text-amber-300">"Audite o documento SCR"</span
+              >},<br />
+              &nbsp;&nbsp;config={<span class="text-amber-300">"callbacks"</span
+              >: [langfuse_handler]}<br />
+              )
+            </div>
+
+            <div id="code-cli" class="code-content hidden">
+              <span class="text-slate-500"># Executar o agente QA (Fase 1)</span
+              ><br />
+              <span class="text-orange-300">python -m src.cli</span> \<br />
+              &nbsp;&nbsp;--csv data/sample/analise.csv \<br />
+              &nbsp;&nbsp;--out output/audit.json \<br />
+              &nbsp;&nbsp;-v<br /><br />
+              <span class="text-slate-500"># Saída JSON com:</span><br />
+              <span class="text-slate-400"># - overall_score (0–100)</span
+              ><br />
+              <span class="text-slate-400"
+                ># - dimension_scores (D1–D6 com findings)</span
+              ><br />
+              <span class="text-slate-400"># - summary + recommendations</span
+              ><br />
+              <span class="text-slate-400"
+                ># - metadata (tokens, custo, latência)</span
+              ><br />
+              <span class="text-slate-400"
+                ># - trace_id (link para Langfuse)</span
+              ><br /><br />
+              <span class="text-slate-500"># Rodar testes</span><br />
+              <span class="text-orange-300">pytest</span> -q
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="bg-orange-500/10 border border-orange-500/30 p-5 rounded-lg flex items-start"
+        >
+          <div class="text-2xl mr-4">&#128269;</div>
+          <div>
+            <h4 class="font-bold text-orange-400">
+              A Investigação em Tempo Real
+            </h4>
+            <p class="text-sm text-orange-300 mt-1">
+              Ao executar o script, o terminal irá gerar um URL do Trace.
+              Abriremos este link na aula para ver, em tempo real, o pensamento
+              (*Thought*), ação (*Action*) e observação (*Observation*) da
+              ferramenta executada.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="mod-4"
+        class="content-section max-w-4xl mx-auto hidden animate-[fadeIn_0.5s_ease-out]"
+      >
+        <div class="mb-8">
+          <span
+            class="text-orange-400 font-semibold tracking-wider text-sm uppercase"
+            >Módulo 4 (15 min)</span
+          >
+          <h2 class="text-3xl md:text-4xl font-bold text-white mt-2 mb-4">
+            Avaliação e Otimização em Produção
+          </h2>
+          <p class="text-slate-400 text-lg">
+            O passo além da monitorização. Como garantir a qualidade contínua do
+            Agente? Scores (avaliação humana + LLM-as-a-judge), gestão de
+            custos, e benchmark comparando Fase 1 (sequencial) vs Fase 2
+            (paralela).
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div
+            class="bg-navy-700 p-6 rounded-xl shadow-sm border border-navy-600"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold text-orange-400">Scores (Avaliações)</h3>
+              <span class="text-2xl">&#11088;</span>
+            </div>
+            <ul class="space-y-3 text-sm text-slate-300">
+              <li>
+                <strong class="text-white">Implícita/Explícita:</strong> Polegar
+                Cima/Baixo na UI do utilizador injeta um score no Trace via API.
+              </li>
+              <li>
+                <strong class="text-white">LLM-as-a-judge:</strong> GPT-4
+                classifica gerações do agente (Relevância, Segurança,
+                Fidedignidade) com base em templates.
+              </li>
+              <li>
+                <strong class="text-white">Nível de Confiança:</strong> Findings
+                com confiança &lt; 0.3 são automaticamente marcados como
+                <code class="text-orange-300">info</code>.
+              </li>
+            </ul>
+          </div>
+
+          <div
+            class="bg-navy-700 p-6 rounded-xl shadow-sm border border-navy-600"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold text-orange-400">Gestão de Custos</h3>
+              <span class="text-2xl">&#128176;</span>
+            </div>
+            <ul class="space-y-3 text-sm text-slate-300">
+              <li>
+                <strong class="text-white">Alertas de Budget:</strong>
+                Identificar Traces onde o agente consome tokens excessivos
+                (loops, prompts extensos).
+              </li>
+              <li>
+                <strong class="text-white">Agrupamento:</strong> Filtrar via
+                <code class="text-orange-300">user_id</code>,
+                <code class="text-orange-300">session_id</code> ou
+                <code class="text-orange-300">tags</code>
+                para comparar modelos e fases.
+              </li>
+              <li>
+                <strong class="text-white">Metadata:</strong> Cada trace salva
+                <code class="text-orange-300">total_tokens</code>,
+                <code class="text-orange-300">total_cost_usd</code> e
+                <code class="text-orange-300">latency_seconds</code>.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Benchmark Fase 1 vs Fase 2 -->
+        <div class="bg-navy-700 rounded-xl border border-navy-600 p-6 mb-8">
+          <h3 class="font-bold text-orange-400 mb-4 text-center">
+            &#9889; Benchmark: Fase 1 vs Fase 2
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead>
+                <tr class="border-b border-navy-600">
+                  <th class="py-2 px-3 text-orange-400">Métrica</th>
+                  <th class="py-2 px-3 text-slate-300">Fase 1 (Sequencial)</th>
+                  <th class="py-2 px-3 text-slate-300">Fase 2 (LangGraph)</th>
+                  <th class="py-2 px-3 text-slate-300">Medido via</th>
+                </tr>
+              </thead>
+              <tbody class="text-slate-400">
+                <tr class="border-b border-navy-800">
+                  <td class="py-2 px-3 font-medium text-white">
+                    Latência total
+                  </td>
+                  <td class="py-2 px-3">~45s</td>
+                  <td class="py-2 px-3 text-emerald-400">
+                    ~15s (~3x &#128640;)
+                  </td>
+                  <td class="py-2 px-3">Trace &rarr; duration</td>
+                </tr>
+                <tr class="border-b border-navy-800">
+                  <td class="py-2 px-3 font-medium text-white">
+                    Tokens totais
+                  </td>
+                  <td class="py-2 px-3">~12k</td>
+                  <td class="py-2 px-3">~12k (similar)</td>
+                  <td class="py-2 px-3">Trace &rarr; metadata</td>
+                </tr>
+                <tr class="border-b border-navy-800">
+                  <td class="py-2 px-3 font-medium text-white">Custo USD</td>
+                  <td class="py-2 px-3">~$0.03</td>
+                  <td class="py-2 px-3">~$0.03 (similar)</td>
+                  <td class="py-2 px-3">Trace &rarr; cost_usd</td>
+                </tr>
+                <tr class="border-b border-navy-800">
+                  <td class="py-2 px-3 font-medium text-white">Paralelismo</td>
+                  <td class="py-2 px-3 text-slate-500">Não</td>
+                  <td class="py-2 px-3 text-emerald-400">
+                    3 workers simultâneos
+                  </td>
+                  <td class="py-2 px-3">Spans no timeline</td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-3 font-medium text-white">
+                    Score qualidade
+                  </td>
+                  <td class="py-2 px-3">Baseline</td>
+                  <td class="py-2 px-3">Similar ou melhor</td>
+                  <td class="py-2 px-3">Schema JSON</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div
+          class="bg-navy-700 p-6 rounded-xl shadow-sm border border-navy-600"
+        >
+          <h3 class="font-bold text-orange-400 mb-6 text-center">
+            Dashboard Simulado: Consumo de Tokens Diário
+          </h3>
+          <div class="chart-container">
+            <canvas id="costChart"></canvas>
+          </div>
+          <p class="text-xs text-center text-slate-500 mt-4">
+            Simulação de visualização de Analytics no Langfuse separando custos
+            por contexto e geração.
+          </p>
+        </div>
+
+        <div class="mt-10 p-6 bg-navy-800 text-center rounded-xl text-white">
+          <h3 class="text-xl font-bold mb-2 text-orange-400">
+            &#10067; Q&A e Fecho
+          </h3>
+          <p class="text-slate-300 text-sm mb-4">
+            Espaço aberto para dúvidas de adoção. Partilha de links para
+            documentação e repositório da aula no GitHub.
+          </p>
+          <div
+            class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-slate-400 mt-4"
+          >
+            <div class="bg-navy-700 rounded-lg p-3">
+              <span class="text-orange-400 font-bold"
+                >&#128214; Docs Langfuse</span
+              ><br />
+              langfuse.com/docs
+            </div>
+            <div class="bg-navy-700 rounded-lg p-3">
+              <span class="text-orange-400 font-bold"
+                >&#128187; GitHub Langfuse</span
+              ><br />
+              github.com/langfuse/langfuse
+            </div>
+            <div class="bg-navy-700 rounded-lg p-3">
+              <span class="text-orange-400 font-bold"
+                >&#127891; SCR.data BCB</span
+              ><br />
+              dadosabertos.bcb.gov.br/dataset/scr_data
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ MÓDULO 5: LAB FASE 2 ═══ -->
+      <section
+        id="mod-5"
+        class="content-section max-w-4xl mx-auto hidden animate-[fadeIn_0.5s_ease-out]"
+      >
+        <div class="mb-8">
+          <span
+            class="text-orange-400 font-semibold tracking-wider text-sm uppercase"
+            >Módulo 5 — Laboratório</span
+          >
+          <h2 class="text-3xl md:text-4xl font-bold text-white mt-2 mb-4">
+            Fase 2: LangGraph com Workers Paralelos
+          </h2>
+          <p class="text-slate-400 text-lg">
+            Refatore o agente único da Fase 1 para uma arquitetura com 1
+            orquestrador + 3 workers paralelos usando LangGraph. Mesmo schema de
+            saída, ~3x mais rápido.
+          </p>
+        </div>
+
+        <!-- Arquitetura LangGraph -->
+        <div class="bg-navy-800 rounded-2xl border border-navy-600 p-6 mb-8">
+          <h3 class="font-bold text-orange-400 mb-4">
+            &#9881; Arquitetura do Grafo
+          </h3>
+          <div
+            class="bg-navy-900 rounded-lg p-4 font-mono text-xs text-slate-300 overflow-x-auto border border-navy-700 mb-4"
+          >
+            <div class="text-center text-orange-400 mb-2">┌──────────────┐</div>
+            <div class="text-center text-orange-400">│ Initialize │</div>
+            <div class="text-center text-slate-500">│ (load CSV + │</div>
+            <div class="text-center text-slate-500">│ checklist) │</div>
+            <div class="text-center text-orange-400 mb-2">└──────┬───────┘</div>
+            <div class="text-center text-slate-500 mb-2">
+              ┌───────────┼───────────┐
+            </div>
+            <div class="flex justify-center gap-4 mb-2">
+              <div class="text-center">
+                <div class="text-orange-300">┌──────────┐</div>
+                <div class="text-orange-300">│ Worker 1 │</div>
+                <div class="text-slate-400">│ D1 + D2 │</div>
+                <div class="text-orange-300">└────┬─────┘</div>
+              </div>
+              <div class="text-center">
+                <div class="text-orange-300">┌──────────┐</div>
+                <div class="text-orange-300">│ Worker 2 │</div>
+                <div class="text-slate-400">│ D3 + D4 │</div>
+                <div class="text-orange-300">└────┬─────┘</div>
+              </div>
+              <div class="text-center">
+                <div class="text-orange-300">┌──────────┐</div>
+                <div class="text-orange-300">│ Worker 3 │</div>
+                <div class="text-slate-400">│ D5 + D6 │</div>
+                <div class="text-orange-300">└────┬─────┘</div>
+              </div>
+            </div>
+            <div class="text-center text-slate-500 mb-2">
+              └─────────────┼─────────────┘
+            </div>
+            <div class="text-center text-orange-400">┌──────────────┐</div>
+            <div class="text-center text-orange-400">│ Consolidate │</div>
+            <div class="text-center text-slate-500">│ (merge + │</div>
+            <div class="text-center text-slate-500">│ synthesis) │</div>
+            <div class="text-center text-orange-400">└──────┬───────┘</div>
+            <div class="text-center text-emerald-400 mt-2">
+              &#10003; JSON Output (AuditResult)
+            </div>
+          </div>
+        </div>
+
+        <!-- Workers Assignment -->
+        <div class="bg-navy-700 rounded-xl border border-navy-600 p-6 mb-8">
+          <h3 class="font-bold text-orange-400 mb-4">
+            &#128101; Atribuição dos Workers
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div
+              class="bg-navy-800 rounded-lg p-4 border-l-4 border-orange-500"
+            >
+              <div class="text-orange-400 font-bold text-sm mb-2">Worker 1</div>
+              <div class="text-xs text-slate-300">
+                <strong>D1</strong> — Cobertura e escopo
+              </div>
+              <div class="text-xs text-slate-300">
+                <strong>D2</strong> — Periodicidade e janela
+              </div>
+              <div class="text-xs text-slate-500 mt-2">
+                Skills: pdf_extraction + criteria_evaluation
+              </div>
+            </div>
+            <div
+              class="bg-navy-800 rounded-lg p-4 border-l-4 border-orange-400"
+            >
+              <div class="text-orange-400 font-bold text-sm mb-2">Worker 2</div>
+              <div class="text-xs text-slate-300">
+                <strong>D3</strong> — Definições de indicadores
+              </div>
+              <div class="text-xs text-slate-300">
+                <strong>D4</strong> — Granularidade e segmentações
+              </div>
+              <div class="text-xs text-slate-500 mt-2">
+                Skills: pdf_extraction + criteria_evaluation
+              </div>
+            </div>
+            <div
+              class="bg-navy-800 rounded-lg p-4 border-l-4 border-orange-300"
+            >
+              <div class="text-orange-400 font-bold text-sm mb-2">Worker 3</div>
+              <div class="text-xs text-slate-300">
+                <strong>D5</strong> — Limitações e ressalvas
+              </div>
+              <div class="text-xs text-slate-300">
+                <strong>D6</strong> — Clareza textual
+              </div>
+              <div class="text-xs text-slate-500 mt-2">
+                Skills: pdf_extraction + criteria_evaluation
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 bg-navy-800 rounded-lg p-3 text-center">
+            <div class="text-sm text-slate-300">
+              <span class="text-orange-400 font-bold">Orquestrador:</span>
+              score_calculation + report_synthesis + observability → Todas as
+              dimensões
+            </div>
+          </div>
+        </div>
+
+        <!-- Passo a Passo do Lab -->
+        <div class="bg-navy-700 rounded-xl border border-navy-600 p-6 mb-8">
+          <h3 class="font-bold text-orange-400 mb-4">
+            &#128221; Passo a Passo do Laboratório
+          </h3>
+          <div class="space-y-4">
+            <div class="flex items-start">
+              <span
+                class="bg-orange-500 text-white w-7 h-7 rounded-full flex items-center justify-center mr-3 text-sm font-bold flex-shrink-0"
+                >1</span
+              >
+              <div>
+                <div class="text-sm font-medium text-white">
+                  Instalar LangGraph
+                </div>
+                <code class="text-xs text-orange-300"
+                  >pip install langgraph langchain-core langchain-openai</code
+                >
+              </div>
+            </div>
+            <div class="flex items-start">
+              <span
+                class="bg-orange-500 text-white w-7 h-7 rounded-full flex items-center justify-center mr-3 text-sm font-bold flex-shrink-0"
+                >2</span
+              >
+              <div>
+                <div class="text-sm font-medium text-white">
+                  Implementar
+                  <code class="text-orange-300">initialize_node()</code>
+                </div>
+                <p class="text-xs text-slate-400">
+                  Reutilizar <code class="text-orange-300">load_csv()</code> e
+                  <code class="text-orange-300">load_checklist()</code>.
+                  Inicializar Langfuse com tags=["fase-2"].
+                </p>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <span
+                class="bg-orange-500 text-white w-7 h-7 rounded-full flex items-center justify-center mr-3 text-sm font-bold flex-shrink-0"
+                >3</span
+              >
+              <div>
+                <div class="text-sm font-medium text-white">
+                  Implementar <code class="text-orange-300">worker_node()</code>
+                </div>
+                <p class="text-xs text-slate-400">
+                  Filtrar dimensões via
+                  <code class="text-orange-300"
+                    >WORKER_ASSIGNMENTS[worker_id]</code
+                  >. Avaliar e calcular score por dimensão.
+                </p>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <span
+                class="bg-orange-500 text-white w-7 h-7 rounded-full flex items-center justify-center mr-3 text-sm font-bold flex-shrink-0"
+                >4</span
+              >
+              <div>
+                <div class="text-sm font-medium text-white">
+                  Implementar
+                  <code class="text-orange-300">consolidate_node()</code>
+                </div>
+                <p class="text-xs text-slate-400">
+                  Coletar dimension_scores, calcular overall_score, gerar
+                  sumário via LLM, montar AuditResult.
+                </p>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <span
+                class="bg-orange-500 text-white w-7 h-7 rounded-full flex items-center justify-center mr-3 text-sm font-bold flex-shrink-0"
+                >5</span
+              >
+              <div>
+                <div class="text-sm font-medium text-white">
+                  Implementar <code class="text-orange-300">build_graph()</code>
+                </div>
+                <p class="text-xs text-slate-400">
+                  Montar o StateGraph com nós e edges, compilar e executar via
+                  <code class="text-orange-300">graph.invoke()</code>.
+                </p>
+              </div>
+            </div>
+            <div class="flex items-start">
+              <span
+                class="bg-emerald-500 text-white w-7 h-7 rounded-full flex items-center justify-center mr-3 text-sm font-bold flex-shrink-0"
+                >&#10003;</span
+              >
+              <div>
+                <div class="text-sm font-medium text-white">
+                  Benchmark & Validação
+                </div>
+                <p class="text-xs text-slate-400">
+                  Usar
+                  <code class="text-orange-300">src/eval/benchmark.py</code>
+                  para comparar Fase 1 vs Fase 2. Verificar paralelismo no
+                  Langfuse timeline.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Arquivos do Lab -->
+        <div class="bg-navy-700 rounded-xl border border-navy-600 p-6 mb-8">
+          <h3 class="font-bold text-orange-400 mb-4">
+            &#128193; Arquivos para Implementar
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead>
+                <tr class="border-b border-navy-600">
+                  <th class="py-2 px-3 text-orange-400">Arquivo</th>
+                  <th class="py-2 px-3 text-slate-300">Status</th>
+                  <th class="py-2 px-3 text-slate-300">O que fazer</th>
+                </tr>
+              </thead>
+              <tbody class="text-slate-400 text-xs">
+                <tr class="border-b border-navy-800">
+                  <td class="py-2 px-3 font-mono text-orange-300">
+                    src/graph/state.py
+                  </td>
+                  <td class="py-2 px-3 text-emerald-400">&#10004; Pronto</td>
+                  <td class="py-2 px-3">
+                    GraphState e WORKER_ASSIGNMENTS definidos
+                  </td>
+                </tr>
+                <tr class="border-b border-navy-800">
+                  <td class="py-2 px-3 font-mono text-orange-300">
+                    src/graph/orchestrator.py
+                  </td>
+                  <td class="py-2 px-3 text-yellow-400">
+                    &#127891; Laboratório
+                  </td>
+                  <td class="py-2 px-3">
+                    Implementar initialize, worker, consolidate e build_graph
+                  </td>
+                </tr>
+                <tr class="border-b border-navy-800">
+                  <td class="py-2 px-3 font-mono text-orange-300">
+                    src/graph/workers.py
+                  </td>
+                  <td class="py-2 px-3 text-emerald-400">&#10004; Pronto</td>
+                  <td class="py-2 px-3">Usa worker_node() internamente</td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-3 font-mono text-orange-300">
+                    src/eval/benchmark.py
+                  </td>
+                  <td class="py-2 px-3 text-emerald-400">&#10004; Pronto</td>
+                  <td class="py-2 px-3">
+                    Comparação Fase 1 vs Fase 2 automatizada
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Schema de Saída -->
+        <div class="bg-navy-800 rounded-xl border border-navy-600 p-6 mb-8">
+          <h3 class="font-bold text-orange-400 mb-3">
+            &#128230; Schema JSON de Saída (ambas as fases)
+          </h3>
+          <div class="font-mono text-xs text-slate-300 overflow-x-auto">
+            <pre class="bg-navy-900 rounded-lg p-4 border border-navy-700">{
+  <span class="text-orange-300">"trace_id"</span>: <span class="text-slate-500">"string (Langfuse trace)"</span>,
+  <span class="text-orange-300">"overall_score"</span>: <span class="text-emerald-400">float 0-100</span>,
+  <span class="text-orange-300">"dimension_scores"</span>: [
+    {
+      <span class="text-amber-300">"dimension_id"</span>: "D1",
+      <span class="text-amber-300">"weight"</span>: 0.15,
+      <span class="text-amber-300">"score"</span>: <span class="text-emerald-400">float 0-100</span>,
+      <span class="text-amber-300">"findings"</span>: [
+        { <span class="text-slate-500">severity, description, evidence, recommendation</span> }
+      ]
+    }
+  ],
+  <span class="text-orange-300">"summary"</span>: <span class="text-slate-500">"string"</span>,
+  <span class="text-orange-300">"recommendations"</span>: [<span class="text-slate-500">"string"</span>],
+  <span class="text-orange-300">"metadata"</span>: {
+    <span class="text-amber-300">"model"</span>, <span class="text-amber-300">"total_tokens"</span>, <span class="text-amber-300">"total_cost_usd"</span>,
+    <span class="text-amber-300">"latency_seconds"</span>, <span class="text-amber-300">"timestamp"</span>, <span class="text-amber-300">"phase"</span>
+  }
+}</pre>
+          </div>
+        </div>
+
+        <div
+          class="bg-orange-500/10 border border-orange-500/30 rounded-xl p-6 text-center"
+        >
+          <div class="text-3xl mb-2">&#127891;</div>
+          <h3 class="font-bold text-orange-400 text-lg mb-2">
+            Desafio para o Aluno
+          </h3>
+          <p class="text-sm text-orange-300">
+            Complete os stubs em
+            <code class="text-orange-200">src/graph/orchestrator.py</code>,
+            execute a auditoria e compare os traces no Langfuse. O objetivo é
+            ver os 3 workers sobrepostos no timeline — prova visual do
+            paralelismo!
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // --- Navigation Logic ---
+        const navBtns = document.querySelectorAll(".nav-btn");
+        const sections = document.querySelectorAll(".content-section");
+        const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+        const sidebar = document.getElementById("sidebar");
+
+        function switchTab(targetId) {
+          sections.forEach((sec) => sec.classList.replace("block", "hidden"));
+          document
+            .getElementById(targetId)
+            .classList.replace("hidden", "block");
+
+          navBtns.forEach((btn) => {
+            btn.classList.remove(
+              "bg-orange-500/10",
+              "border-r-4",
+              "border-orange-500",
+              "text-orange-500",
+            );
+            btn.classList.add("text-slate-400");
+          });
+
+          const activeBtn = document.querySelector(
+            `[data-target="${targetId}"]`,
+          );
+          if (activeBtn) {
+            activeBtn.classList.remove("text-slate-400");
+            activeBtn.classList.add(
+              "bg-orange-500/10",
+              "border-r-4",
+              "border-orange-500",
+              "text-orange-500",
+            );
+          }
+
+          if (window.innerWidth < 768) {
+            sidebar.classList.add("-translate-x-full");
+          }
+        }
+
+        navBtns.forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            switchTab(e.currentTarget.getAttribute("data-target"));
+          });
+        });
+
+        mobileMenuBtn.addEventListener("click", () => {
+          sidebar.classList.toggle("-translate-x-full");
+        });
+
+        // --- Module 1: Toggle Logic ---
+        const btnTrad = document.getElementById("btn-trad");
+        const btnIa = document.getElementById("btn-ia");
+        const contentTrad = document.getElementById("content-trad");
+        const contentIa = document.getElementById("content-ia");
+
+        btnTrad.addEventListener("click", () => {
+          btnTrad.className =
+            "px-6 py-2 rounded-md text-sm font-medium bg-navy-600 shadow text-white transition-all";
+          btnIa.className =
+            "px-6 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white transition-all";
+          contentTrad.classList.remove("hidden");
+          contentIa.classList.add("hidden");
+        });
+
+        btnIa.addEventListener("click", () => {
+          btnIa.className =
+            "px-6 py-2 rounded-md text-sm font-medium bg-navy-600 shadow text-white transition-all";
+          btnTrad.className =
+            "px-6 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white transition-all";
+          contentIa.classList.remove("hidden");
+          contentTrad.classList.add("hidden");
+        });
+
+        // --- Module 2: Hierarchy Interactivity ---
+        const hierarchyData = {
+          trace: {
+            title: "TRACE (Sessão)",
+            color: "text-orange-400",
+            desc: "O topo da árvore. Representa a execução completa de uma funcionalidade, como uma sessão inteira de chat do utilizador. Suporta metadados globais cruciais como <code>user_id</code> e <code>session_id</code>.",
+          },
+          span: {
+            title: "SPAN (Tarefa)",
+            color: "text-orange-300",
+            desc: "Representa uma unidade de trabalho com início e fim. Pode ser aninhada. Exemplos incluem o agente avaliando uma condição, recuperando dados de um Vector DB (Retrieval), ou formatando a resposta.",
+          },
+          generation: {
+            title: "GENERATION (LLM)",
+            color: "text-emerald-400",
+            desc: "Um Span especial dedicado exclusivamente à invocação do modelo (ex: GPT-4). Guarda o prompt exato submetido, a resposta, parâmetros e calcula automaticamente o custo de tokens.",
+          },
+          event: {
+            title: "EVENT (Marco)",
+            color: "text-amber-400",
+            desc: "Um registo de um ponto específico no tempo, sem duração associada. Utilizado para marcar ações como 'Utilizador clicou no botão' ou registar um erro súbito de rede.",
+          },
+        };
+
+        const hierarchyItems = document.querySelectorAll(".hierarchy-item");
+        const descContainer = document.getElementById("hierarchy-desc");
+
+        hierarchyItems.forEach((item) => {
+          item.addEventListener("click", (e) => {
+            e.stopPropagation();
+
+            hierarchyItems.forEach((i) =>
+              i.classList.remove("ring-2", "ring-white", "scale-105"),
+            );
+            item.classList.add("ring-2", "ring-white", "scale-105");
+
+            const type = item.getAttribute("data-desc");
+            const data = hierarchyData[type];
+
+            descContainer.innerHTML = `
+                        <h4 class="text-2xl font-bold ${data.color} mb-3">${data.title}</h4>
+                        <p class="text-slate-300 leading-relaxed text-sm md:text-base">${data.desc}</p>
+                    `;
+          });
+        });
+
+        // --- Module 3: Code Tabs Logic ---
+        const codeTabBtns = document.querySelectorAll(".code-tab-btn");
+        const codeContents = document.querySelectorAll(".code-content");
+
+        codeTabBtns.forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const targetId = e.target.getAttribute("data-target");
+
+            codeContents.forEach((content) =>
+              content.classList.replace("block", "hidden"),
+            );
+            document
+              .getElementById(targetId)
+              .classList.replace("hidden", "block");
+
+            codeTabBtns.forEach((b) => {
+              b.className =
+                "code-tab-btn px-6 py-3 text-sm font-medium text-slate-400 hover:text-slate-200 transition";
+            });
+
+            e.target.className =
+              "code-tab-btn active px-6 py-3 text-sm font-medium text-orange-400 border-b-2 border-orange-400";
+          });
+        });
+
+        // --- Module 4: Chart.js Initialization ---
+        const ctx = document.getElementById("costChart").getContext("2d");
+        const costChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
+            datasets: [
+              {
+                label: "Prompt Tokens (Input)",
+                data: [12000, 19000, 15000, 22000, 18000, 8000, 5000],
+                backgroundColor: "#fb923c",
+                stack: "Stack 0",
+              },
+              {
+                label: "Completion Tokens (Output)",
+                data: [4000, 6000, 5500, 8000, 6500, 2000, 1500],
+                backgroundColor: "#f97316",
+                stack: "Stack 0",
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: "top",
+                labels: {
+                  font: { family: "'Inter', sans-serif" },
+                  color: "#e2e8f0",
+                },
+              },
+              tooltip: {
+                mode: "index",
+                intersect: false,
+                callbacks: {
+                  label: function (context) {
+                    let label = context.dataset.label || "";
+                    if (label) label += ": ";
+                    if (context.parsed.y !== null)
+                      label +=
+                        new Intl.NumberFormat("pt-PT").format(
+                          context.parsed.y,
+                        ) + " tokens";
+                    return label;
+                  },
+                },
+              },
+            },
+            scales: {
+              x: {
+                stacked: true,
+                grid: { display: false },
+                ticks: { color: "#94a3b8" },
+              },
+              y: {
+                stacked: true,
+                border: { display: false },
+                ticks: { color: "#94a3b8" },
+                grid: { color: "#1e3a5f" },
+              },
+            },
+          },
+        });
+      });
+    </script>
+  </body>
+</html>
