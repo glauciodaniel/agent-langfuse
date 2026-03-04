@@ -1,0 +1,18 @@
+# Dependências do Projeto: O Analista Júnior
+# Agente Cognitivo Financeiro com LangChain
+
+# LangChain Core - Framework principal para construção de aplicações LLM
+# Inclui abstrações fundamentais como Tools, Prompts, Messages, LCEL
+langchain-core>=0.2.0
+
+# LangChain OpenAI - Integração com modelos da OpenAI (GPT-3.5, GPT-4)
+# Fornece a classe ChatOpenAI e suporte a function calling
+langchain-openai>=0.1.0
+
+# Pydantic - Validação de dados e serialização
+# Usado para definir schemas de entrada das Tools de forma type-safe
+pydantic>=2.0.0
+
+# Python-dotenv - Carregamento de variáveis de ambiente do arquivo .env
+# Essencial para gerenciar a OPENAI_API_KEY de forma segura
+python-dotenv>=1.0.0

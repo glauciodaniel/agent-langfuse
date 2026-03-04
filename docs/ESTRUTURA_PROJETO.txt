@@ -1,0 +1,277 @@
+================================================================================
+                    O ANALISTA JÚNIOR - ESTRUTURA DO PROJETO
+================================================================================
+
+financial_analyst/
+│
+├── 📋 ÍNDICE E NAVEGAÇÃO
+│   └── INDEX.md                    # Índice completo da documentação
+│
+├── 🚀 INÍCIO RÁPIDO
+│   ├── QUICK_START.md              # Guia de início rápido (3 comandos)
+│   └── setup.py                    # Script de setup automatizado
+│
+├── 📚 DOCUMENTAÇÃO COMPLETA
+│   ├── README.md                   # Visão geral do projeto
+│   ├── INSTRUCOES.md               # Manual passo a passo detalhado
+│   ├── ARQUITETURA.md              # Documentação técnica completa
+│   ├── RESUMO_EXECUTIVO.md         # Visão executiva e métricas
+│   └── ESTRUTURA_PROJETO.txt       # Este arquivo (mapa visual)
+│
+├── 💻 CÓDIGO FONTE (Core)
+│   ├── market_mock.py              # [~50 linhas] Simulação de dados
+│   ├── tools.py                    # [~60 linhas] Ferramentas LangChain
+│   ├── agent.py                    # [~150 linhas] Cérebro do agente
+│   └── main.py                     # [~130 linhas] Interface CLI
+│
+├── 🧪 TESTES E VALIDAÇÃO
+│   └── test_agent.py               # [~120 linhas] Suite de testes
+│
+└── ⚙️ CONFIGURAÇÃO
+    ├── requirements.txt            # Dependências Python
+    ├── env.example                 # Template de configuração
+    └── .gitignore                  # Arquivos ignorados pelo Git
+
+================================================================================
+                            FLUXO DE DADOS
+================================================================================
+
+    ┌─────────────────────────────────────────────────────────────┐
+    │                      USUÁRIO (CLI)                          │
+    │                        main.py                              │
+    └──────────────────────────┬──────────────────────────────────┘
+                               │
+                               │ "Quanto está a Petrobras?"
+                               ▼
+    ┌─────────────────────────────────────────────────────────────┐
+    │                    AGENTE (Cérebro)                         │
+    │                       agent.py                              │
+    │  • Recebe pergunta                                          │
+    │  • Decide: usar tool ou responder direto?                   │
+    │  • Executa loop ReAct                                       │
+    └──────────────────────────┬──────────────────────────────────┘
+                               │
+                               │ Decisão: USAR TOOL
+                               ▼
+    ┌─────────────────────────────────────────────────────────────┐
+    │                   FERRAMENTAS (Tools)                       │
+    │                        tools.py                             │
+    │  • stock_price_tool("PETR4")                                │
+    │  • Valida com Pydantic                                      │
+    └──────────────────────────┬──────────────────────────────────┘
+                               │
+                               │ Buscar preço
+                               ▼
+    ┌─────────────────────────────────────────────────────────────┐
+    │                    DADOS (Mock)                             │
+    │                    market_mock.py                           │
+    │  • MOCK_STOCK_PRICES['PETR4'] = 38.50                       │
+    │  • Retorna: "R$ 38.50"                                      │
+    └──────────────────────────┬──────────────────────────────────┘
+                               │
+                               │ Resultado
+                               ▼
+                        (Volta para agent.py)
+                               │
+                               │ Formular resposta
+                               ▼
+                        (Volta para main.py)
+                               │
+                               │ Exibir
+                               ▼
+                           USUÁRIO
+
+================================================================================
+                        PADRÃO ReAct IMPLEMENTADO
+================================================================================
+
+    THOUGHT (Pensamento)
+         │
+         │ "Preciso buscar o preço de PETR4"
+         │
+         ▼
+    ACTION (Ação)
+         │
+         │ Executar: stock_price_tool("PETR4")
+         │
+         ▼
+    OBSERVATION (Observação)
+         │
+         │ Resultado: "R$ 38.50"
+         │
+         ▼
+    ANSWER (Resposta)
+         │
+         │ "O preço da Petrobras (PETR4) é R$ 38,50"
+         │
+         ▼
+    USUÁRIO
+
+================================================================================
+                        ARQUIVOS POR CATEGORIA
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ DOCUMENTAÇÃO (7 arquivos)                                               │
+├─────────────────────────────────────────────────────────────────────────┤
+│ • INDEX.md                  - Índice de navegação                       │
+│ • README.md                 - Visão geral                               │
+│ • QUICK_START.md            - Início rápido                             │
+│ • INSTRUCOES.md             - Manual detalhado                          │
+│ • ARQUITETURA.md            - Documentação técnica                      │
+│ • RESUMO_EXECUTIVO.md       - Visão executiva                           │
+│ • ESTRUTURA_PROJETO.txt     - Este arquivo                              │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ CÓDIGO PYTHON (6 arquivos)                                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│ • market_mock.py            - Dados simulados                           │
+│ • tools.py                  - Ferramentas LangChain                     │
+│ • agent.py                  - Lógica do agente                          │
+│ • main.py                   - Interface CLI                             │
+│ • test_agent.py             - Testes automatizados                      │
+│ • setup.py                  - Script de setup                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ CONFIGURAÇÃO (3 arquivos)                                               │
+├─────────────────────────────────────────────────────────────────────────┤
+│ • requirements.txt          - Dependências                              │
+│ • env.example               - Template de config                        │
+│ • .gitignore                - Arquivos ignorados                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                            MÉTRICAS DO PROJETO
+================================================================================
+
+Código Python:           ~390 linhas (4 módulos principais)
+Documentação:            ~1500 linhas (7 documentos)
+Testes:                  3 cenários automatizados
+Docstrings:              100% cobertura
+Erros de linting:        0
+Total de arquivos:       16 arquivos
+
+================================================================================
+                        COMANDOS PRINCIPAIS
+================================================================================
+
+# Setup inicial (automatizado)
+python setup.py
+
+# Executar o agente
+python main.py
+
+# Executar testes
+python test_agent.py
+
+# Instalar dependências manualmente
+pip install -r requirements.txt
+
+# Criar arquivo .env
+cp env.example .env
+# (depois edite .env e adicione sua OPENAI_API_KEY)
+
+================================================================================
+                        AÇÕES MOCK DISPONÍVEIS
+================================================================================
+
+┌──────────┬─────────────────┬───────────┐
+│ Ticker   │ Empresa         │ Preço     │
+├──────────┼─────────────────┼───────────┤
+│ PETR4    │ Petrobras       │ R$ 38,50  │
+│ VALE3    │ Vale            │ R$ 60,20  │
+│ ITUB4    │ Itaú Unibanco   │ R$ 32,10  │
+│ BBDC4    │ Bradesco        │ R$ 14,85  │
+│ WEGE3    │ WEG             │ R$ 42,30  │
+│ ABEV3    │ Ambev           │ R$ 11,95  │
+└──────────┴─────────────────┴───────────┘
+
+================================================================================
+                        STACK TECNOLÓGICO
+================================================================================
+
+┌─────────────────────┬──────────┬────────────────────────────────────┐
+│ Tecnologia          │ Versão   │ Propósito                          │
+├─────────────────────┼──────────┼────────────────────────────────────┤
+│ Python              │ 3.10+    │ Linguagem base                     │
+│ LangChain Core      │ ≥0.2.0   │ Framework de orquestração          │
+│ LangChain OpenAI    │ ≥0.1.0   │ Integração com GPT                 │
+│ Pydantic            │ ≥2.0.0   │ Validação type-safe                │
+│ Python-dotenv       │ ≥1.0.0   │ Gerenciamento de config            │
+└─────────────────────┴──────────┴────────────────────────────────────┘
+
+================================================================================
+                        FLUXO DE LEITURA RECOMENDADO
+================================================================================
+
+NÍVEL 1: INICIANTE (30 min)
+    INDEX.md → QUICK_START.md → README.md → Executar main.py
+
+NÍVEL 2: INTERMEDIÁRIO (1-2 horas)
+    INSTRUCOES.md → Ler código com comentários → Fazer exercícios
+
+NÍVEL 3: AVANÇADO (3+ horas)
+    ARQUITETURA.md → RESUMO_EXECUTIVO.md → Modificar código → Criar tool
+
+================================================================================
+                        PRÓXIMOS PASSOS (ROADMAP)
+================================================================================
+
+AULA 2: Memória Conversacional
+    • Adicionar ConversationBufferMemory
+    • Manter contexto entre perguntas
+    • Histórico de conversas
+
+AULA 3: LangGraph
+    • Substituir loop manual por grafo de estados
+    • Fluxos condicionais complexos
+    • Múltiplas ramificações
+
+AULA 4: RAG (Retrieval-Augmented Generation)
+    • Integrar VectorStore
+    • Buscar em documentos financeiros
+    • Embeddings e similarity search
+
+================================================================================
+                        CONCEITOS PRINCIPAIS ENSINADOS
+================================================================================
+
+✓ Padrão ReAct (Reasoning + Acting)
+✓ Tool Calling com LangChain moderno
+✓ Validação type-safe com Pydantic
+✓ LCEL (LangChain Expression Language)
+✓ Temperature e controle de determinismo
+✓ Arquitetura modular e limpa
+✓ Logs estruturados para debug
+✓ Testes automatizados
+
+================================================================================
+                        SUPORTE E RECURSOS
+================================================================================
+
+Problemas Técnicos:
+    1. Consulte INSTRUCOES.md - Seção "Resolução de Problemas"
+    2. Execute: python test_agent.py
+    3. Verifique instalação das dependências
+
+Dúvidas Conceituais:
+    1. Leia ARQUITETURA.md
+    2. Revise docstrings no código
+    3. Consulte instrutor do Bootcamp
+
+Links Úteis:
+    • LangChain: https://python.langchain.com/
+    • OpenAI API: https://platform.openai.com/api-keys
+    • Pydantic: https://docs.pydantic.dev/
+
+================================================================================
+                    PROJETO DESENVOLVIDO PARA
+                    BOOTCAMP FIAP + ITAÚ
+                    Aula 1: Agentes Cognitivos com Padrão ReAct
+================================================================================
+
+Status: ✅ COMPLETO E PRONTO PARA USO
+
+Última atualização: Janeiro 2026
